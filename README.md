@@ -15,7 +15,7 @@ Custom Docker image that combines PostgreSQL 16 with PostGIS 3.5 and pgvector 0.
 - `postgis_topology` - PostGIS topology spatial types and functions
 - `fuzzystrmatch` - Fuzzy string matching
 - `postgis_tiger_geocoder` - PostGIS tiger geocoder and reverse geocoder 
-- `vector` - Open-source vector similarity search
+- `vector` - Open-source vector similarity search 
 
 ## Usage
 
