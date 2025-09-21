@@ -56,7 +56,12 @@ docker pull scitus/pgvector-postgis:latest
 ```bash
 git clone https://github.com/scitus-solutions/pgvector-postgis.git
 cd pgvector-postgis
+
+# Standard build (1.47GB)
 docker build -t pgvector-postgis .
+
+# Optimized build (635MB - 57% smaller!)
+docker build -f Dockerfile.optimized -t pgvector-postgis:optimized .
 ```
 
 ## Quick Start
@@ -183,6 +188,21 @@ We provide comprehensive test scripts to verify your installation:
 ```
 
 ## Performance Considerations
+
+### Image Size Optimization
+
+We provide two Docker image variants:
+
+| Variant | Size | Build Time | Use Case |
+|---------|------|------------|----------|
+| **Standard** | 1.47GB | Faster | Development, when disk space isn't critical |
+| **Optimized** | 635MB | Slower | Production, cloud deployments, Kubernetes |
+
+The optimized image achieves **57% size reduction** through:
+- Multi-stage builds separating compilation from runtime
+- Minimal package installation with `--no-install-recommends`
+- Aggressive cleanup of build dependencies
+- Shallow git cloning with `--depth 1`
 
 ### Indexing Strategies
 

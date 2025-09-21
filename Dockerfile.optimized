@@ -1,0 +1,76 @@
+# PostgreSQL 16 with PostGIS 3.5 and pgvector 0.8.0 - Optimized
+# Multi-stage build for smaller image size
+
+# Build stage for pgvector compilation
+FROM postgis/postgis:16-3.5 AS builder
+
+# Build arguments for version flexibility
+ARG PGVECTOR_VERSION=v0.8.0
+
+# Install build dependencies and compile pgvector in a single layer
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        postgresql-server-dev-16 \
+        git \
+        ca-certificates && \
+    git clone --branch ${PGVECTOR_VERSION} --depth 1 https://github.com/pgvector/pgvector.git /tmp/pgvector && \
+    cd /tmp/pgvector && \
+    make && \
+    make install
+
+# Final stage - production image
+FROM postgis/postgis:16-3.5
+
+# Copy pgvector extension from builder stage
+COPY --from=builder /usr/share/postgresql/16/extension/vector* /usr/share/postgresql/16/extension/
+COPY --from=builder /usr/lib/postgresql/16/lib/vector.so /usr/lib/postgresql/16/lib/
+
+# Create initialization script using heredoc for better readability
+RUN cat > /docker-entrypoint-initdb.d/10-init-extensions.sh <<'EOF'
+#!/bin/bash
+set -e
+
+# Function to create extensions
+create_extensions() {
+    local db=$1
+    echo "Creating extensions in database: $db"
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$db" <<-EOSQL
+        CREATE EXTENSION IF NOT EXISTS postgis;
+        CREATE EXTENSION IF NOT EXISTS postgis_topology;
+        CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;
+        CREATE EXTENSION IF NOT EXISTS postgis_tiger_geocoder;
+        CREATE EXTENSION IF NOT EXISTS vector;
+EOSQL
+}
+
+# Create extensions in template database so all new databases have them
+create_extensions template1
+
+# Also create in default postgres database
+create_extensions postgres
+
+echo "PostGIS and pgvector extensions have been installed successfully"
+EOF
+
+# Make the script executable
+RUN chmod +x /docker-entrypoint-initdb.d/10-init-extensions.sh
+
+# Clean up any unnecessary files
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Labels for metadata
+LABEL maintainer="Scitus Solutions Ltd." \
+      description="Optimized PostgreSQL 16 with PostGIS 3.5 and pgvector 0.8.0" \
+      postgres.version="16" \
+      postgis.version="3.5" \
+      pgvector.version="0.8.0" \
+      org.opencontainers.image.source="https://github.com/scitus-solutions/pgvector-postgis" \
+      org.opencontainers.image.vendor="Scitus Solutions Ltd." \
+      org.opencontainers.image.title="PostgreSQL with PostGIS and pgvector" \
+      org.opencontainers.image.description="Production-ready PostgreSQL combining spatial and vector capabilities for AI-powered geospatial applications"
+
+# Health check to ensure database is ready
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD pg_isready -U ${POSTGRES_USER:-postgres} || exit 1
