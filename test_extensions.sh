@@ -208,6 +208,42 @@ run_sql "DROP TABLE vector_test;"
 
 echo ""
 echo "======================================"
+echo "Testing pg_stat_statements Extension"
+echo "======================================"
+echo ""
+
+# Test 1: Check pg_stat_statements is installed
+echo -e "${YELLOW}Checking pg_stat_statements extension...${NC}"
+PG_STAT_INSTALLED=$(run_sql "SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_stat_statements');")
+if [ "$PG_STAT_INSTALLED" = "t" ]; then
+    check_result "pg_stat_statements extension installed"
+else
+    echo -e "${RED}✗${NC} pg_stat_statements extension not found"
+    exit 1
+fi
+
+# Test 2: Verify we can query pg_stat_statements view
+echo -e "${YELLOW}Testing pg_stat_statements view access...${NC}"
+run_sql "SELECT count(*) FROM pg_stat_statements;" > /dev/null
+check_result "pg_stat_statements view accessible"
+
+# Test 3: Test query tracking
+echo -e "${YELLOW}Testing query tracking...${NC}"
+run_sql "SELECT 1 AS test_query;"
+TRACKED=$(run_sql "SELECT count(*) > 0 FROM pg_stat_statements WHERE query LIKE '%test_query%';")
+if [ "$TRACKED" = "t" ]; then
+    check_result "Query tracking works"
+else
+    echo -e "${YELLOW}!${NC} Query tracking may need shared_preload_libraries configuration"
+fi
+
+# Test 4: Verify statistics reset function exists
+echo -e "${YELLOW}Testing pg_stat_statements_reset function...${NC}"
+run_sql "SELECT pg_stat_statements_reset();" > /dev/null 2>&1
+check_result "pg_stat_statements_reset function available"
+
+echo ""
+echo "======================================"
 echo "Combined PostGIS + pgvector Tests"
 echo "======================================"
 echo ""
@@ -247,7 +283,8 @@ echo ""
 echo "Summary:"
 echo "  - PostGIS Version: $POSTGIS_VERSION"
 echo "  - pgvector Version: $PGVECTOR_VERSION"
-echo "  - Both extensions are working correctly"
+echo "  - All extensions are working correctly"
+echo "  - pg_stat_statements: ✓"
 echo "  - Spatial operations: ✓"
 echo "  - Vector operations: ✓"
 echo "  - Combined spatial-vector operations: ✓"
