@@ -23,6 +23,7 @@ set -e\n\
 \n\
 # Create extensions in template database so all new databases have them\n\
 psql -v ON_ERROR_STOP=1 --username \"\$POSTGRES_USER\" --dbname template1 <<-EOSQL\n\
+    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;\n\
     CREATE EXTENSION IF NOT EXISTS postgis;\n\
     CREATE EXTENSION IF NOT EXISTS postgis_topology;\n\
     CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;\n\
@@ -32,6 +33,7 @@ EOSQL\n\
 \n\
 # Also create in default postgres database\n\
 psql -v ON_ERROR_STOP=1 --username \"\$POSTGRES_USER\" --dbname postgres <<-EOSQL\n\
+    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;\n\
     CREATE EXTENSION IF NOT EXISTS postgis;\n\
     CREATE EXTENSION IF NOT EXISTS postgis_topology;\n\
     CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;\n\
