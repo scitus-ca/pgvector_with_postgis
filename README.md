@@ -9,7 +9,7 @@
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 
 **A production-ready PostgreSQL Docker image combining spatial and vector capabilities for AI-powered geospatial applications**
-
+ 
 Brought to you by [**Scitus Solutions Ltd.**](https://scitus.ca)
 
 </div>
