@@ -10,7 +10,7 @@
 
 **A production-ready PostgreSQL Docker image combining spatial and vector capabilities for AI-powered geospatial applications**
  
-Brought to you by [**Scitus Solutions Ltd.**](https://scitus.ca)
+Brought to you by [**Scitus Solutions Ltd.**](https://scitus.ca) 
 
 </div>
 
